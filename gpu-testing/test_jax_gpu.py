@@ -203,7 +203,7 @@ def test_jax_gpu():
         print(f"   Result shape: {result.shape}")
         print(f"   Result dtype: {result.dtype}")
         print(f"   Time taken: {(end-start)*1000:.2f} ms")
-        print(f"   Device used: {result.device()}")
+        print(f"   Device used: {result.device}")
         
         # Test gradient computation
         print("\n" + "-"*70)
@@ -219,7 +219,7 @@ def test_jax_gpu():
         
         print(f"✅ Gradient computation successful!")
         print(f"   Gradient shape: {gradient.shape}")
-        print(f"   Device used: {gradient.device()}")
+        print(f"   Device used: {gradient.device}")
         
         print("\n" + "="*70)
         print(" ✅ ALL JAX GPU TESTS PASSED!")
