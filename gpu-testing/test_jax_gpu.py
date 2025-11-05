@@ -100,6 +100,18 @@ def test_cuda_cudnn():
         sorted_versions = sorted(cuda_versions, key=lambda x: [int(n) for n in x.split('.')], reverse=True)
         for version in sorted_versions:
             print(f"   • {version}")
+        
+        # If multiple versions detected, show cleanup tip
+        if len(sorted_versions) > 1:
+            print(f"\n   💡 Tip: Multiple CUDA versions detected. To remove older versions:")
+            print(f"      # List all CUDA packages")
+            print(f"      dpkg -l | grep cuda")
+            print(f"")
+            print(f"      # Remove specific version (e.g., CUDA {sorted_versions[-1]})")
+            print(f"      sudo apt-get --purge remove '*cuda-{sorted_versions[-1]}*'")
+            print(f"")
+            print(f"      # Or remove all except current symlink target")
+            print(f"      # (Check /usr/local/cuda first with 'readlink /usr/local/cuda')")
     else:
         print("   ⚠️  No CUDA toolkit installations detected")
     
