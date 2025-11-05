@@ -73,7 +73,14 @@ A comprehensive diagnostic script that validates NVIDIA GPU environments for JAX
 3. **Install CUDNN**
 
    ```bash
-   sudo apt-get install libcudnn8 libcudnn8-dev
+   # For CUDA 12.x
+   sudo apt-get install libcudnn9-cuda-12 libcudnn9-dev-cuda-12
+   
+   # For CUDA 11.x
+   sudo apt-get install libcudnn8-cuda-11 libcudnn8-dev-cuda-11
+   
+   # For CUDA 13.x
+   sudo apt-get install libcudnn9-cuda-13 libcudnn9-dev-cuda-13
    ```
 
 4. **Install JAX with GPU Support**
@@ -108,6 +115,48 @@ JAX GPU................................................. ✅ PASS
 🎉 All tests passed! Your GPU setup is working correctly.
 ```
 
+**Detailed output includes:**
+
+**Test 2: CUDA and CUDNN Versions**
+```
+📦 CUDA Toolkit Versions:
+   • 12.9 (current active)
+   • 12.4
+   • 12.3
+
+   💡 Tip: Multiple CUDA versions detected. To remove older versions:
+      # List all CUDA packages
+      dpkg -l | grep cuda
+
+      # Remove specific version (e.g., CUDA 12.3)
+      sudo apt-get --purge remove '*cuda-12.3*'
+
+🔧 CUDA Driver Version: 13.0 (max supported)
+
+   ℹ️  Note: Driver supports CUDA 13.0, but highest toolkit installed is 12.9
+      You could install CUDA 13.0 if needed
+
+📦 CUDNN Version:
+   • 8.9.7
+
+   ✅ CUDNN 8.9.7 is compatible with CUDA 12.9
+
+   💡 Tip: CUDNN 9.x is available for CUDA 12.x
+      Newer version: sudo apt-get install libcudnn9-cuda-12 libcudnn9-dev-cuda-12
+      (CUDNN 8.9.7 will continue to work)
+```
+
+**Test 4: JAX GPU Functionality**
+```
+✅ JAX installed successfully
+JAX version: 0.8.0
+
+📋 JAX/CUDA Compatibility:
+   JAX backend: GPU (auto-detected compatibility)
+   System CUDA: 12.9
+   ✅ JAX is successfully using CUDA 12.9
+```
+
 ## Script Architecture
 
 The script is organized into five main components:
@@ -130,16 +179,24 @@ Validates driver installation and reports:
 
 #### Test 2: CUDA and CUDNN Versions
 
-Checks for:
-- NVCC compiler version
-- CUDA runtime version
-- CUDA libraries in system path
-- CUDNN libraries and version
+**New Features:**
+- Detects all installed CUDA toolkit versions
+- Shows which version is currently active (symlink target)
+- Compares driver CUDA support with installed toolkits
+- Provides cleanup tips for multiple installations
+- Displays full CUDNN version (e.g., 8.9.7)
+- Checks CUDNN/CUDA compatibility
+- Recommends newer CUDNN versions when available
+- Uses CUDA-specific package names (e.g., `libcudnn9-cuda-12`)
 
-Searches for CUDNN headers in:
-- `/usr/include/cudnn_version.h`
-- `/usr/local/cuda/include/cudnn_version.h`
-- `/usr/include/x86_64-linux-gnu/cudnn_version.h`
+**What it reports:**
+- All CUDA toolkit installations (with active version marked)
+- Driver CUDA version (maximum supported)
+- Compatibility status between driver and toolkits
+- Full CUDNN version from header files
+- CUDNN/CUDA compatibility check
+- Cleanup commands for old versions
+- Upgrade recommendations with exact install commands
 
 #### Test 3: Hardware Availability
 
@@ -151,12 +208,19 @@ Tests GPU detection across frameworks:
 
 #### Test 4: JAX GPU Functionality
 
-Performs actual GPU computations:
+**New Features:**
+- Detects JAX/CUDA version compatibility
+- Auto-detects compatibility for newer JAX versions (0.8.0+)
+- Warns about version mismatches
+- Provides specific reinstall commands
+
+**Performs actual GPU computations:**
 
 1. **Installation verification** - JAX version and available devices
-2. **GPU device detection** - Filters and counts GPU devices
-3. **Matrix multiplication test** - 4096×4096 matrices with JIT compilation
-4. **Gradient computation** - Automatic differentiation on GPU
+2. **CUDA compatibility check** - Validates JAX works with system CUDA
+3. **GPU device detection** - Filters and counts GPU devices
+4. **Matrix multiplication test** - 4096×4096 matrices with JIT compilation
+5. **Gradient computation** - Automatic differentiation on GPU
 
 **Performance metrics:**
 - Execution time
@@ -207,10 +271,17 @@ export PATH=/usr/local/cuda/bin:$PATH
 
 #### `CUDNN library not found`
 
-**Solution:** Install CUDNN
+**Solution:** Install CUDNN for your CUDA version
 
 ```bash
-sudo apt-get install libcudnn8 libcudnn8-dev
+# For CUDA 12.x
+sudo apt-get install libcudnn9-cuda-12 libcudnn9-dev-cuda-12
+
+# For CUDA 11.x
+sudo apt-get install libcudnn8-cuda-11 libcudnn8-dev-cuda-11
+
+# For CUDA 13.x
+sudo apt-get install libcudnn9-cuda-13 libcudnn9-dev-cuda-13
 ```
 
 #### `CUDA version mismatch`
