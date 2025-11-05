@@ -116,12 +116,13 @@ def test_cuda_cudnn():
         
         # If multiple versions detected, show cleanup tip
         if len(sorted_versions) > 1:
+            # Convert version format (e.g., "12.3" -> "12-3")
+            version_dash = sorted_versions[-1].replace(".", "-")
             print(f"\n   💡 Tip: Multiple CUDA versions detected. To remove older versions:")
-            print(f"      # List all CUDA packages")
-            print(f"      dpkg -l | grep cuda")
-            print(f"")
-            print(f"      # Remove specific version (e.g., CUDA {sorted_versions[-1]})")
-            print(f"      sudo apt-get --purge remove '*cuda-{sorted_versions[-1]}*'")
+            print(f"      dpkg -l | grep -i cuda | grep \"{version_dash}\"")
+            print(f"      sudo apt-get --purge remove $(dpkg -l | grep -i cuda | grep \"{version_dash}\" | awk '{{print $2}}')")
+            print(f"      sudo apt-get autoremove")
+            print(f"      sudo apt-get autoclean")
     else:
         print("   ⚠️  No CUDA toolkit installations detected")
     

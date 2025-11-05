@@ -53,19 +53,11 @@ A comprehensive diagnostic script that validates NVIDIA GPU environments for JAX
 
    **Tip: Clean up older CUDA versions**
    
-   If you have multiple CUDA versions installed and want to clean up older ones:
+   If you have multiple CUDA versions installed and want to clean up older ones (i.e. such as CUDA==12.3):
    
    ```bash
-   # List all installed CUDA packages
-   dpkg -l | grep cuda
-   
-   # Remove a specific CUDA version (e.g., CUDA 11.8)
-   sudo apt-get --purge remove "*cuda-11-8*"
-   
-   # Remove all CUDA packages (use with caution!)
-   sudo apt-get --purge remove "*cuda*" "*cublas*" "*cufft*" "*cufile*" "*curand*" "*cusolver*" "*cusparse*" "*gds-tools*" "*npp*" "*nvjpeg*" "nsight*"
-   
-   # Clean up and update
+   dpkg -l | grep -i cuda | grep "12-3"
+   sudo apt-get --purge remove $(dpkg -l | grep -i cuda | grep "12-3" | awk '{print $2}')
    sudo apt-get autoremove
    sudo apt-get autoclean
    ```
