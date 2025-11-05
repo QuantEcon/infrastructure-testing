@@ -80,17 +80,24 @@ def test_cuda_cudnn():
     print("\nChecking for CUDA libraries:")
     success, output = run_command("ldconfig -p | grep libcuda", "CUDA libraries in system:")
     if success:
-        # Extract unique CUDA library versions
+        # Extract CUDA versions from installation paths
         versions = set()
         for line in output.split('\n'):
-            # Look for patterns like libcudart.so.12.0 or libcuda.so.1
-            match = re.search(r'libcuda\S+\.so\.(\d+(?:\.\d+)*)', line)
+            # Look for CUDA installation paths like /usr/local/cuda-12.3/
+            match = re.search(r'/cuda-(\d+\.\d+)/', line)
             if match:
                 versions.add(match.group(1))
+            # Also check for version in library name like libcudart.so.12.3.52
+            elif 'libcudart.so' in line:
+                match = re.search(r'libcudart\.so\.(\d+\.\d+(?:\.\d+)?)', line)
+                if match:
+                    versions.add(match.group(1))
         if versions:
-            print("\nDetected CUDA library versions:")
-            for version in sorted(versions, reverse=True):
+            print("\nDetected CUDA toolkit versions:")
+            for version in sorted(versions, key=lambda x: [int(n) for n in x.split('.')], reverse=True):
                 print(f"  - {version}")
+        else:
+            print("\nNote: Could not extract specific CUDA version from library paths")
     
     # Check CUDNN
     print("\nChecking for CUDNN libraries:")
