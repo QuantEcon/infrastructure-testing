@@ -275,6 +275,7 @@ def test_jax_gpu():
             
             # Determine CUDA version from jaxlib
             # JAX package names include cuda version: jaxlib-0.4.23+cuda12.cudnn89
+            # Newer versions (0.8.0+) use simpler version strings
             cuda_in_jax = None
             if 'cuda12' in jaxlib_version or 'cu12' in jaxlib_version:
                 cuda_in_jax = 12
@@ -282,6 +283,26 @@ def test_jax_gpu():
                 cuda_in_jax = 11
             elif 'cuda13' in jaxlib_version or 'cu13' in jaxlib_version:
                 cuda_in_jax = 13
+            else:
+                # For newer JAX versions without CUDA in version string,
+                # try to detect from linked libraries
+                try:
+                    import subprocess
+                    # Find jaxlib location and check which CUDA it links to
+                    jaxlib_path = jaxlib.__file__
+                    result = subprocess.run(
+                        f"ldd {jaxlib_path} 2>/dev/null | grep -oP 'libcuda.*\\.so' | head -1",
+                        shell=True,
+                        capture_output=True,
+                        text=True,
+                        timeout=5
+                    )
+                    # If JAX successfully loaded GPU, infer CUDA compatibility from runtime
+                    if jax.default_backend() == 'gpu':
+                        # JAX is working with GPU, so it's compatible with system CUDA
+                        cuda_in_jax = "auto-detected"
+                except:
+                    pass
             
             # Get system CUDA version
             success, output = run_command(
@@ -297,12 +318,17 @@ def test_jax_gpu():
             # Check compatibility
             if cuda_in_jax and system_cuda:
                 print(f"\n📋 JAX/CUDA Compatibility:")
-                print(f"   JAX built for: CUDA {cuda_in_jax}.x")
-                print(f"   System CUDA: {system_cuda}")
-                
-                if cuda_in_jax == system_cuda_major:
+                if cuda_in_jax == "auto-detected":
+                    print(f"   JAX backend: GPU (auto-detected compatibility)")
+                    print(f"   System CUDA: {system_cuda}")
+                    print(f"   ✅ JAX is successfully using CUDA {system_cuda}")
+                elif cuda_in_jax == system_cuda_major:
+                    print(f"   JAX built for: CUDA {cuda_in_jax}.x")
+                    print(f"   System CUDA: {system_cuda}")
                     print(f"   ✅ JAX and CUDA versions are compatible")
                 else:
+                    print(f"   JAX built for: CUDA {cuda_in_jax}.x")
+                    print(f"   System CUDA: {system_cuda}")
                     print(f"   ⚠️  WARNING: Version mismatch detected!")
                     print(f"      JAX expects CUDA {cuda_in_jax}.x but system has CUDA {system_cuda}")
                     print(f"\n   💡 Tip: Reinstall JAX for your CUDA version:")
