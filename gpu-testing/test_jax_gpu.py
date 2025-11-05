@@ -266,6 +266,60 @@ def test_jax_gpu():
         print(f"\n✅ JAX installed successfully")
         print(f"JAX version: {jax.__version__}")
         
+        # Get CUDA/CUDNN info from previous test (stored in global or re-check)
+        # Check which CUDA version JAX was built for
+        try:
+            # Try to get jaxlib version info
+            import jaxlib
+            jaxlib_version = jaxlib.__version__
+            
+            # Determine CUDA version from jaxlib
+            # JAX package names include cuda version: jaxlib-0.4.23+cuda12.cudnn89
+            cuda_in_jax = None
+            if 'cuda12' in jaxlib_version or 'cu12' in jaxlib_version:
+                cuda_in_jax = 12
+            elif 'cuda11' in jaxlib_version or 'cu11' in jaxlib_version:
+                cuda_in_jax = 11
+            elif 'cuda13' in jaxlib_version or 'cu13' in jaxlib_version:
+                cuda_in_jax = 13
+            
+            # Get system CUDA version
+            success, output = run_command(
+                "readlink -f /usr/local/cuda 2>/dev/null | grep -oP 'cuda-\\K[0-9.]+'",
+                "Checking active CUDA:",
+                quiet=True
+            )
+            system_cuda = None
+            if success and output.strip():
+                system_cuda = output.strip()
+                system_cuda_major = int(system_cuda.split('.')[0])
+            
+            # Check compatibility
+            if cuda_in_jax and system_cuda:
+                print(f"\n📋 JAX/CUDA Compatibility:")
+                print(f"   JAX built for: CUDA {cuda_in_jax}.x")
+                print(f"   System CUDA: {system_cuda}")
+                
+                if cuda_in_jax == system_cuda_major:
+                    print(f"   ✅ JAX and CUDA versions are compatible")
+                else:
+                    print(f"   ⚠️  WARNING: Version mismatch detected!")
+                    print(f"      JAX expects CUDA {cuda_in_jax}.x but system has CUDA {system_cuda}")
+                    print(f"\n   💡 Tip: Reinstall JAX for your CUDA version:")
+                    if system_cuda_major == 12:
+                        print(f"      pip uninstall jax jaxlib")
+                        print(f'      pip install -U "jax[cuda12]"')
+                    elif system_cuda_major == 11:
+                        print(f"      pip uninstall jax jaxlib")
+                        print(f'      pip install -U "jax[cuda11]"')
+                    elif system_cuda_major >= 13:
+                        print(f"      pip uninstall jax jaxlib")
+                        print(f'      pip install -U "jax[cuda12]"  # CUDA 13 may use cuda12 package')
+                        print(f"      # Check JAX docs for CUDA 13 support status")
+        except Exception as e:
+            # Silently skip compatibility check if it fails
+            pass
+        
         # Check available devices
         print("\nJAX Devices:")
         devices = jax.devices()
