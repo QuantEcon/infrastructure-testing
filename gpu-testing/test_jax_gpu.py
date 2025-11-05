@@ -193,22 +193,24 @@ def test_cuda_cudnn():
                 print(f"\n   ⚠️  WARNING: CUDNN {cudnn_version} may not be compatible with CUDA {active_cuda}")
                 if cuda_major >= 13:
                     print(f"      Recommended: CUDNN 9.x for CUDA 13.x")
-                    print(f"      Install: sudo apt-get install libcudnn9 libcudnn9-dev")
+                    print(f"      Install: sudo apt-get install libcudnn9-cuda-13 libcudnn9-dev-cuda-13")
                 elif cuda_major == 12:
                     print(f"      Recommended: CUDNN 8.9+ or CUDNN 9.x for CUDA 12.x")
-                    print(f"      Install: sudo apt-get install libcudnn8 libcudnn8-dev")
+                    print(f"      Install: sudo apt-get install libcudnn9-cuda-12 libcudnn9-dev-cuda-12")
                 elif cuda_major == 11:
                     print(f"      Recommended: CUDNN 8.x for CUDA 11.x")
-                    print(f"      Install: sudo apt-get install libcudnn8 libcudnn8-dev")
+                    print(f"      Install: sudo apt-get install libcudnn8-cuda-11 libcudnn8-dev-cuda-11")
     else:
         print("   ⚠️  CUDNN not detected")
         if cuda_versions:
             cuda_major = int(sorted_versions[0].split('.')[0])
             print(f"\n   💡 Tip: Install CUDNN for CUDA {sorted_versions[0]}:")
             if cuda_major >= 13:
-                print(f"      sudo apt-get install libcudnn9 libcudnn9-dev")
+                print(f"      sudo apt-get install libcudnn9-cuda-13 libcudnn9-dev-cuda-13")
+            elif cuda_major == 12:
+                print(f"      sudo apt-get install libcudnn9-cuda-12 libcudnn9-dev-cuda-12")
             else:
-                print(f"      sudo apt-get install libcudnn8 libcudnn8-dev")
+                print(f"      sudo apt-get install libcudnn8-cuda-11 libcudnn8-dev-cuda-11")
     
     return True
 
