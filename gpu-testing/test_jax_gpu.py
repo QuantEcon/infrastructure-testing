@@ -167,9 +167,48 @@ def test_cuda_cudnn():
     # Display CUDNN summary
     print("\n📦 CUDNN Version:")
     if cudnn_version:
+        cudnn_major = int(cudnn_version.split('.')[0])
         print(f"   • {cudnn_version}")
+        
+        # Check CUDNN compatibility with CUDA toolkit
+        if cuda_versions and active_cuda:
+            cuda_major = int(active_cuda.split('.')[0])
+            
+            # CUDNN compatibility guide (approximate):
+            # CUDNN 8.x supports CUDA 11.x and 12.x
+            # CUDNN 9.x supports CUDA 12.x and 13.x
+            is_compatible = False
+            compatibility_msg = ""
+            
+            if cudnn_major == 8 and cuda_major in [11, 12]:
+                is_compatible = True
+            elif cudnn_major == 9 and cuda_major in [12, 13]:
+                is_compatible = True
+            elif cudnn_major == cudnn_major:  # Same major version generally works
+                is_compatible = True
+            
+            if is_compatible:
+                print(f"\n   ✅ CUDNN {cudnn_version} is compatible with CUDA {active_cuda}")
+            else:
+                print(f"\n   ⚠️  WARNING: CUDNN {cudnn_version} may not be compatible with CUDA {active_cuda}")
+                if cuda_major >= 13:
+                    print(f"      Recommended: CUDNN 9.x for CUDA 13.x")
+                    print(f"      Install: sudo apt-get install libcudnn9 libcudnn9-dev")
+                elif cuda_major == 12:
+                    print(f"      Recommended: CUDNN 8.9+ or CUDNN 9.x for CUDA 12.x")
+                    print(f"      Install: sudo apt-get install libcudnn8 libcudnn8-dev")
+                elif cuda_major == 11:
+                    print(f"      Recommended: CUDNN 8.x for CUDA 11.x")
+                    print(f"      Install: sudo apt-get install libcudnn8 libcudnn8-dev")
     else:
         print("   ⚠️  CUDNN not detected")
+        if cuda_versions:
+            cuda_major = int(sorted_versions[0].split('.')[0])
+            print(f"\n   💡 Tip: Install CUDNN for CUDA {sorted_versions[0]}:")
+            if cuda_major >= 13:
+                print(f"      sudo apt-get install libcudnn9 libcudnn9-dev")
+            else:
+                print(f"      sudo apt-get install libcudnn8 libcudnn8-dev")
     
     return True
 
