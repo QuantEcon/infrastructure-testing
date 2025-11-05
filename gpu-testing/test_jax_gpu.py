@@ -76,7 +76,20 @@ def test_cuda_cudnn():
         "CUDA version from nvidia-smi:"
     )
     
-    # Check CUDA runtime version
+    # Check CUDA installations by listing directories
+    print("\nChecking for CUDA toolkit installations:")
+    success, output = run_command(
+        "ls -d /usr/local/cuda-*/ 2>/dev/null | grep -o 'cuda-[0-9.]*' | sed 's/cuda-//' || echo 'No versioned CUDA installations found'",
+        "Installed CUDA toolkits:"
+    )
+    
+    # Also check what /usr/local/cuda points to
+    success2, output2 = run_command(
+        "readlink /usr/local/cuda 2>/dev/null || echo 'Symlink not found'",
+        "CUDA symlink target:"
+    )
+    
+    # Check CUDA runtime version from ldconfig
     print("\nChecking for CUDA libraries:")
     success, output = run_command("ldconfig -p | grep libcuda", "CUDA libraries in system:")
     if success:
@@ -93,7 +106,7 @@ def test_cuda_cudnn():
                 if match:
                     versions.add(match.group(1))
         if versions:
-            print("\nDetected CUDA toolkit versions:")
+            print("\nDetected CUDA toolkit versions from libraries:")
             for version in sorted(versions, key=lambda x: [int(n) for n in x.split('.')], reverse=True):
                 print(f"  - {version}")
         else:
