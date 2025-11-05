@@ -51,6 +51,25 @@ A comprehensive diagnostic script that validates NVIDIA GPU environments for JAX
    sudo apt-get -y install cuda
    ```
 
+   **Tip: Clean up older CUDA versions**
+   
+   If you have multiple CUDA versions installed and want to clean up older ones:
+   
+   ```bash
+   # List all installed CUDA packages
+   dpkg -l | grep cuda
+   
+   # Remove a specific CUDA version (e.g., CUDA 11.8)
+   sudo apt-get --purge remove "*cuda-11-8*"
+   
+   # Remove all CUDA packages (use with caution!)
+   sudo apt-get --purge remove "*cuda*" "*cublas*" "*cufft*" "*cufile*" "*curand*" "*cusolver*" "*cusparse*" "*gds-tools*" "*npp*" "*nvjpeg*" "nsight*"
+   
+   # Clean up and update
+   sudo apt-get autoremove
+   sudo apt-get autoclean
+   ```
+
 3. **Install CUDNN**
 
    ```bash
@@ -206,6 +225,26 @@ pip install "jax[cuda12]"
 
 # For CUDA 11.x
 pip install "jax[cuda11]"
+```
+
+#### `Multiple CUDA versions detected`
+
+**Symptoms:** Test shows multiple CUDA library versions installed
+
+**Solution:** Clean up older CUDA versions to avoid conflicts:
+
+```bash
+# List all CUDA packages
+dpkg -l | grep cuda
+
+# Remove specific version (e.g., CUDA 11.8)
+sudo apt-get --purge remove "*cuda-11-8*"
+
+# Update alternatives if using CUDA from /usr/local
+sudo update-alternatives --config cuda
+
+# Verify only desired version remains
+ldconfig -p | grep libcuda
 ```
 
 ### Debug Commands

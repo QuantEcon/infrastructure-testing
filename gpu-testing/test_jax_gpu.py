@@ -7,6 +7,7 @@ Tests NVIDIA drivers, CUDA, CUDNN, and JAX GPU functionality
 import sys
 import subprocess
 import os
+import re
 
 def print_section(title):
     """Print a formatted section header"""
@@ -77,14 +78,35 @@ def test_cuda_cudnn():
     
     # Check CUDA runtime version
     print("\nChecking for CUDA libraries:")
-    run_command("ldconfig -p | grep cuda", "CUDA libraries in system:")
+    success, output = run_command("ldconfig -p | grep libcuda", "CUDA libraries in system:")
+    if success:
+        # Extract unique CUDA library versions
+        versions = set()
+        for line in output.split('\n'):
+            # Look for patterns like libcudart.so.12.0 or libcuda.so.1
+            match = re.search(r'libcuda\S+\.so\.(\d+(?:\.\d+)*)', line)
+            if match:
+                versions.add(match.group(1))
+        if versions:
+            print("\nDetected CUDA library versions:")
+            for version in sorted(versions, reverse=True):
+                print(f"  - {version}")
     
     # Check CUDNN
     print("\nChecking for CUDNN libraries:")
-    cudnn_check = run_command(
-        "ldconfig -p | grep cudnn",
-        "CUDNN libraries in system:"
-    )
+    success, output = run_command("ldconfig -p | grep libcudnn", "CUDNN libraries in system:")
+    if success:
+        # Extract CUDNN library versions
+        versions = set()
+        for line in output.split('\n'):
+            # Look for patterns like libcudnn.so.8
+            match = re.search(r'libcudnn\S*\.so\.(\d+(?:\.\d+)*)', line)
+            if match:
+                versions.add(match.group(1))
+        if versions:
+            print("\nDetected CUDNN library versions:")
+            for version in sorted(versions, reverse=True):
+                print(f"  - {version}")
     
     # Try to find CUDNN version from header file
     cudnn_paths = [
