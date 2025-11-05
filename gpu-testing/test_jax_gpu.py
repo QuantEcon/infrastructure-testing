@@ -86,6 +86,16 @@ def test_cuda_cudnn():
                 if '.' in version:
                     cuda_versions.add(version)
     
+    # Check which version is the active symlink
+    active_cuda = None
+    success, output = run_command(
+        "readlink -f /usr/local/cuda 2>/dev/null | grep -oP 'cuda-\\K[0-9.]+'",
+        "Checking active CUDA symlink:",
+        quiet=True
+    )
+    if success and output.strip():
+        active_cuda = output.strip()
+    
     # Check nvidia-smi for driver CUDA version
     success, output = run_command(
         "nvidia-smi | grep -oP 'CUDA Version: \\K[0-9.]+'",
@@ -99,7 +109,10 @@ def test_cuda_cudnn():
     if cuda_versions:
         sorted_versions = sorted(cuda_versions, key=lambda x: [int(n) for n in x.split('.')], reverse=True)
         for version in sorted_versions:
-            print(f"   • {version}")
+            if version == active_cuda:
+                print(f"   • {version} (current active)")
+            else:
+                print(f"   • {version}")
         
         # If multiple versions detected, show cleanup tip
         if len(sorted_versions) > 1:
@@ -109,9 +122,6 @@ def test_cuda_cudnn():
             print(f"")
             print(f"      # Remove specific version (e.g., CUDA {sorted_versions[-1]})")
             print(f"      sudo apt-get --purge remove '*cuda-{sorted_versions[-1]}*'")
-            print(f"")
-            print(f"      # Or remove all except current symlink target")
-            print(f"      # (Check /usr/local/cuda first with 'readlink /usr/local/cuda')")
     else:
         print("   ⚠️  No CUDA toolkit installations detected")
     
