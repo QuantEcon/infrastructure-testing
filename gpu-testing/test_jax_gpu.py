@@ -189,6 +189,12 @@ def test_cuda_cudnn():
             
             if is_compatible:
                 print(f"\n   ✅ CUDNN {cudnn_version} is compatible with CUDA {active_cuda}")
+                
+                # Check if newer CUDNN version is recommended
+                if cuda_major >= 12 and cudnn_major == 8:
+                    print(f"\n   💡 Tip: CUDNN 9.x is available for CUDA {cuda_major}.x")
+                    print(f"      Newer version: sudo apt-get install libcudnn9-cuda-{cuda_major} libcudnn9-dev-cuda-{cuda_major}")
+                    print(f"      (CUDNN 8.9.7 will continue to work)")
             else:
                 print(f"\n   ⚠️  WARNING: CUDNN {cudnn_version} may not be compatible with CUDA {active_cuda}")
                 if cuda_major >= 13:
