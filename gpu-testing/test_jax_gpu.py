@@ -15,11 +15,12 @@ def print_section(title):
     print(f" {title}")
     print("="*70)
 
-def run_command(cmd, description):
+def run_command(cmd, description, quiet=False):
     """Run a shell command and return output"""
-    print(f"\n{description}")
-    print(f"Command: {cmd}")
-    print("-" * 70)
+    if not quiet:
+        print(f"\n{description}")
+        print(f"Command: {cmd}")
+        print("-" * 70)
     try:
         result = subprocess.run(
             cmd, 
@@ -29,11 +30,13 @@ def run_command(cmd, description):
             timeout=10
         )
         if result.returncode == 0:
-            print(result.stdout)
+            if not quiet:
+                print(result.stdout)
             return True, result.stdout
         else:
-            print(f"Error (exit code {result.returncode}):")
-            print(result.stderr)
+            if not quiet:
+                print(f"Error (exit code {result.returncode}):")
+                print(result.stderr)
             return False, result.stderr
     except subprocess.TimeoutExpired:
         print("Command timed out after 10 seconds")
@@ -66,86 +69,68 @@ def test_cuda_cudnn():
     """Test 2: Check CUDA and CUDNN versions"""
     print_section("TEST 2: CUDA and CUDNN Versions")
     
-    # Check CUDA version from nvcc
-    print("\nChecking CUDA version (nvcc):")
-    run_command("nvcc --version", "NVCC compiler version:")
+    # Collect CUDA versions
+    cuda_versions = set()
     
-    # Check CUDA version from nvidia-smi
-    run_command(
-        "nvidia-smi | grep 'CUDA Version'",
-        "CUDA version from nvidia-smi:"
-    )
-    
-    # Check CUDA installations by listing directories
-    print("\nChecking for CUDA toolkit installations:")
+    # Check CUDA installations from directories
     success, output = run_command(
-        "ls -d /usr/local/cuda-*/ 2>/dev/null | grep -o 'cuda-[0-9.]*' | sed 's/cuda-//' || echo 'No versioned CUDA installations found'",
-        "Installed CUDA toolkits:"
+        "ls -d /usr/local/cuda-*/ 2>/dev/null | grep -o 'cuda-[0-9.]*' | sed 's/cuda-//'",
+        "Checking installed CUDA toolkits:",
+        quiet=True
     )
+    if success and output.strip():
+        for line in output.strip().split('\n'):
+            if line and line != 'No versioned CUDA installations found':
+                cuda_versions.add(line.strip())
     
-    # Also check what /usr/local/cuda points to
-    success2, output2 = run_command(
-        "readlink /usr/local/cuda 2>/dev/null || echo 'Symlink not found'",
-        "CUDA symlink target:"
+    # Check nvidia-smi for driver CUDA version
+    success, output = run_command(
+        "nvidia-smi | grep -oP 'CUDA Version: \\K[0-9.]+'",
+        "Checking CUDA from nvidia-smi:",
+        quiet=True
     )
+    driver_cuda = output.strip() if success and output.strip() else None
     
-    # Check CUDA runtime version from ldconfig
-    print("\nChecking for CUDA libraries:")
-    success, output = run_command("ldconfig -p | grep libcuda", "CUDA libraries in system:")
-    if success:
-        # Extract CUDA versions from installation paths
-        versions = set()
-        for line in output.split('\n'):
-            # Look for CUDA installation paths like /usr/local/cuda-12.3/
-            match = re.search(r'/cuda-(\d+\.\d+)/', line)
-            if match:
-                versions.add(match.group(1))
-            # Also check for version in library name like libcudart.so.12.3.52
-            elif 'libcudart.so' in line:
-                match = re.search(r'libcudart\.so\.(\d+\.\d+(?:\.\d+)?)', line)
-                if match:
-                    versions.add(match.group(1))
-        if versions:
-            print("\nDetected CUDA toolkit versions from libraries:")
-            for version in sorted(versions, key=lambda x: [int(n) for n in x.split('.')], reverse=True):
-                print(f"  - {version}")
-        else:
-            print("\nNote: Could not extract specific CUDA version from library paths")
+    # Display CUDA summary
+    print("\n📦 CUDA Toolkit Versions:")
+    if cuda_versions:
+        sorted_versions = sorted(cuda_versions, key=lambda x: [int(n) for n in x.split('.')], reverse=True)
+        for version in sorted_versions:
+            print(f"   • {version}")
+    else:
+        print("   ⚠️  No CUDA toolkit installations detected")
     
-    # Check CUDNN
-    print("\nChecking for CUDNN libraries:")
-    success, output = run_command("ldconfig -p | grep libcudnn", "CUDNN libraries in system:")
-    if success:
-        # Extract CUDNN library versions
-        versions = set()
-        for line in output.split('\n'):
-            # Look for patterns like libcudnn.so.8
-            match = re.search(r'libcudnn\S*\.so\.(\d+(?:\.\d+)*)', line)
-            if match:
-                versions.add(match.group(1))
-        if versions:
-            print("\nDetected CUDNN library versions:")
-            for version in sorted(versions, reverse=True):
-                print(f"  - {version}")
+    if driver_cuda:
+        print(f"\n🔧 CUDA Driver Version: {driver_cuda}")
     
-    # Try to find CUDNN version from header file
+    # Check CUDNN version from header
+    cudnn_version = None
     cudnn_paths = [
         "/usr/include/cudnn_version.h",
         "/usr/local/cuda/include/cudnn_version.h",
         "/usr/include/x86_64-linux-gnu/cudnn_version.h"
     ]
     
-    print("\nSearching for CUDNN version header:")
     for path in cudnn_paths:
         if os.path.exists(path):
-            print(f"Found: {path}")
-            run_command(
-                f"cat {path} | grep '#define CUDNN_MAJOR\\|#define CUDNN_MINOR\\|#define CUDNN_PATCHLEVEL'",
-                f"CUDNN version from {path}:"
-            )
-            break
+            try:
+                with open(path, 'r') as f:
+                    content = f.read()
+                    major = re.search(r'#define CUDNN_MAJOR\s+(\d+)', content)
+                    minor = re.search(r'#define CUDNN_MINOR\s+(\d+)', content)
+                    patch = re.search(r'#define CUDNN_PATCHLEVEL\s+(\d+)', content)
+                    if major and minor and patch:
+                        cudnn_version = f"{major.group(1)}.{minor.group(1)}.{patch.group(1)}"
+                        break
+            except:
+                pass
+    
+    # Display CUDNN summary
+    print("\n📦 CUDNN Version:")
+    if cudnn_version:
+        print(f"   • {cudnn_version}")
     else:
-        print("CUDNN version header not found in common locations")
+        print("   ⚠️  CUDNN not detected")
     
     return True
 
