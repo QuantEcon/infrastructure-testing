@@ -104,7 +104,21 @@ def test_cuda_cudnn():
         print("   ⚠️  No CUDA toolkit installations detected")
     
     if driver_cuda:
-        print(f"\n🔧 CUDA Driver Version: {driver_cuda}")
+        print(f"\n🔧 CUDA Driver Version: {driver_cuda} (max supported)")
+        
+        # Check for version compatibility
+        if cuda_versions:
+            highest_toolkit = sorted_versions[0]
+            driver_major = int(driver_cuda.split('.')[0])
+            toolkit_major = int(highest_toolkit.split('.')[0])
+            
+            if toolkit_major > driver_major:
+                print(f"\n   ⚠️  WARNING: Highest toolkit version ({highest_toolkit}) exceeds driver support ({driver_cuda})")
+            elif toolkit_major < driver_major:
+                print(f"\n   ℹ️  Note: Driver supports CUDA {driver_cuda}, but highest toolkit installed is {highest_toolkit}")
+                print(f"      You could install CUDA {driver_cuda} if needed")
+            else:
+                print(f"\n   ✅ Toolkit and driver versions are compatible")
     
     # Check CUDNN version from header
     cudnn_version = None
