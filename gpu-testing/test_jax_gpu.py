@@ -81,7 +81,10 @@ def test_cuda_cudnn():
     if success and output.strip():
         for line in output.strip().split('\n'):
             if line and line != 'No versioned CUDA installations found':
-                cuda_versions.add(line.strip())
+                version = line.strip()
+                # Only include versions with at least major.minor format (e.g., 12.3, not just 12)
+                if '.' in version:
+                    cuda_versions.add(version)
     
     # Check nvidia-smi for driver CUDA version
     success, output = run_command(
